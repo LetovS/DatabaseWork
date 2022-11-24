@@ -1,0 +1,126 @@
+--Задание 2. Написание простых запросов
+--Создание элементарных запросов без проекции и фильтрации (работаем с БД TSQL)
+--1.	Выведите список всех продуктов
+SELECT *
+FROM [Production].[Products];
+
+--2.	Выведите список всех заказчиков
+SELECT *
+FROM [Sales].[Customers];
+
+--3.	Выведите список всех сотрудников
+SELECT * 
+FROM [HR].[Employees];
+
+--Создание запросов с отбором и обработкой столбцов
+--1.	Выведите названия страны, региона и города, в которых проживают заказчики
+SELECT [country], COALESCE([region], 'NoN') AS region, [city] 
+FROM [Sales].[Customers];
+
+--2.	Выведите название и стоимость продуктов, упорядочив результирующую выборку в порядке убывания стоимости
+SELECT [productname] AS Name, [unitprice] AS Price
+FROM [Production].[Products]
+ORDER BY unitprice DESC;
+
+--Задание 3. Написание запросов с вычисляемыми столбцами
+
+--1.	На основе таблицы Employees напишите запрос, возвращающий таблицу из 3 столбцов: Фамилия сотрудника, Имя сотрудника, e-mail адрес.
+--Столбец e-mail адрес должен быть сформирован в соответствие со следующим шаблоном: <имя>.<фамилия>@<названиеорганизации>.ru.
+--Название организации придумайте сами! Полученные e-mail должны быть в нижнем регистре. 
+SELECT lastname,firstname , LOWER(lastname +'.' +  firstname + '@spb.ru') As EMAIL
+FROM [HR].[Employees];
+
+
+--2.	На основании данных ТОЛЬКО таблицы Products (запрос только к одной таблице!) сформируйте таблицу из трех столбцов:
+--Номер категории, Название продукта и Название категории. 
+--Название категории должно выводиться в соответствии с ее номером:
+--1 -  'Beverages'; 2 - 'Condiments'; 3 - 'Confections'; 4 - 'DairyProducts'; 5 - 'Grains/Cereals'; 6 - 'Meat/Poultry'; 
+--7 - 'Produce'; 8 - 'Seafood'.
+--Для категорий, не попавших в данный список, необходимо вернуть значение  'Other'
+SELECT categoryid, productname, 
+	CASE categoryid
+		when  1 then 'Beverages'
+		when 2 then 'Condiments'
+		when 3 then 'Confections'
+		when 4 then 'DairyProducts'
+		when 5 then 'Grains/Cereals'
+		when 6 then 'Meat/Poultry'
+		when 7 then 'Produce'
+		when 8 then 'Seafood'
+		ELSE 'Other'
+	END AS 'Change valus'
+FROM [Production].[Products]
+
+--3.	Напишите запрос к таблице Customers, возвращающий таблицу из 3 столбцов: contactname, LName и FName.
+-- Значение в столбцах LName и FName должны вычисляться на основе данных столбца contactname
+SELECT contactname
+		, Substring(contactname, CHARINDEX(',',contactname)+1, LEN(contactname) ) AS LName
+		, Substring(contactname, 0, CHARINDEX(',',contactname) ) AS FName
+FROM [Sales].[Customers]
+
+--4.	Напишите запрос к таблице OrderDetails, возвращающий таблицу из 3 столбцов: unitprice, qty и LineTotal.
+--Значение в столбце LineTotal – является расчетной величиной с учетом количества товара, цены и скидки.
+SELECT unitprice, qty, (unitprice * qty - unitprice * qty * discount) AS LineTotal
+FROM [Sales].[OrderDetails]
+
+--Задание 4. Написание запросов с сортировкой
+--1.	Выведите 10 самых дорогих товаров.
+SELECT TOP 10 WITH TIES prod.discontinued, productname, unitprice
+FROM [Production].[Products] AS prod
+ORDER BY unitprice DESC;
+
+--2.	Выведите из таблицы Orders строки с 51 по 100, упорядоченные по дате заказ
+SELECT  *
+FROM [Sales].[Orders]
+ORDER BY orderdate DESC
+OFFSET 50 ROWS FETCH FIRST 50 ROWS ONLY
+
+
+-- Вложенные запросы
+
+--Задание. Использование подзапросов
+
+--1.	Выведите список заказов клиента, который был зарегистрирован в БД последним.
+SELECT orderid, custid
+FROM [Sales].[Orders] WHERE custid =
+										(SELECT Max(custid)
+										 FROM [Sales].[Customers])
+
+--2.	Выведите полные данные по клиенту, который сделал заказ в самую последнюю дату
+--
+SELECT *
+FROM [Sales].[Customers] WHERE custid = 
+							(SELECT Max(custid)
+							FROM [Sales].[Orders]
+							WHERE orderdate = 
+									(SELECT Max(orderdate)
+									 FROM [Sales].[Orders]))
+
+--3.	Выведите список клиентов, которые не делали заказов
+SELECT *
+FROM [Sales].[Customers]
+WHERE custid NOT IN (SELECT DISTINCT(custid)
+					 FROM [Sales].[Orders])
+
+--4.	Выведите список заказов тех клиентов, которые проживают в Mexico
+--
+SELECT *
+FROM [Production].[Products]
+WHERE productid IN (SELECT productid
+					FROM [Sales].[OrderDetails]
+					WHERE orderid IN 
+							(SELECT orderid
+							FROM [Sales].[Orders]
+							WHERE custid IN
+								(SELECT custid
+								FROM [Sales].[Customers]
+								WHERE country = 'Mexico')))
+										
+--5.	Выведите самые дорогие продукты в каждой категории. Детали должны присутствовать!
+SELECT *
+FROM [Production].[Products] AS PP
+WHERE productid = (SELECT TOP 1 productid
+					FROM [Production].[Products]
+					WHERE categoryid = PP.categoryid
+					ORDER BY unitprice DESC)
+ORDER BY categoryid
