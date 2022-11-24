@@ -1,0 +1,188 @@
+create table DevDB2022_serlet
+
+create schema client
+create schema additions
+create schema executor
+create schema sailing
+create schema getterdata
+
+--CREATE TABLE client.client
+--(
+--	id_client INT IDENTITY PRIMARY KEY
+--	, email nvarchar(35) null 
+--)
+
+--CREATE TABLE client.private_person
+--(
+--	id_client int  PRIMARY KEY
+--	, fName nvarchar (20) not null
+--	, lName nvarchar (20) not null
+--	, pasport nvarchar (13) not null CHECK (pasport like '[0-9][0-9] [0-9][0-9] [0-9][0-9][0-9]-[0-9][0-9][0-9]')
+--	, FOREIGN KEY (id_client) REFERENCES [client].[client] ([id_client])
+--)
+
+--CREATE TABLE client.legal_entity
+--(
+--	id_client INT  PRIMARY KEY
+--	, companyname nvarchar(35) UNIQUE not null 
+--	, OKPO int UNIQUE not null CHECK (OKPO like '[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]' OR OKPO like '[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]')
+--	,  KPP int UNIQUE not null CHECK (KPP like '[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]')
+--	, FOREIGN KEY (id_client) REFERENCES [client].[client]([id_client])
+--)
+
+--CREATE TABLE [additions].[client_mobile]
+--(
+--	id_phone INT IDENTITY NOT NULL
+--	, id_client int FOREIGN KEY (id_client) REFERENCES [client].[client]([id_client])
+--	, phone nvarchar(14) UNIQUE not null
+--	,	PRIMARY KEY (id_phone)
+--)
+
+--CREATE TABLE [executor].[Employer]
+--(
+--	id_emp INT IDENTITY PRIMARY KEY
+--	, fName nvarchar(30) not null
+--	, lName nvarchar(30) not null
+--	, email nvarchar(30) UNIQUE null
+--)
+
+--CREATE TABLE [additions].[emp_mobiles]
+--(
+--	id_phone INT IDENTITY PRIMARY KEY
+--	, id_emp int FOREIGN KEY (id_emp) REFERENCES [executor].[Employer]([id_emp])
+--	, phone nvarchar(14) UNIQUE not null
+--)
+
+
+
+--CREATE TABLE [executor].[skipper]
+--(
+--	id_skipper INT IDENTITY PRIMARY KEY
+--	, fName nvarchar(30) not null
+--	, lName nvarchar(30) not null
+--	, license nvarchar(30) UNIQUE null DEFAULT 'NoN'
+--)
+
+--CREATE TABLE [additions].[skipper_mobiles]
+--(
+--	id_phone INT IDENTITY PRIMARY KEY
+--	, id_skipper int FOREIGN KEY (id_skipper) REFERENCES [executor].[skipper]([id_skipper])
+--	, phone nvarchar(14) UNIQUE not null
+--)
+
+
+--CREATE TABLE [sailing].[type_boat]
+--(
+--	id_type INT IDENTITY PRIMARY KEY
+--	, type_boat nvarchar (30) not null
+--)
+
+--CREATE TABLE [additions].[type_status_boat]
+--(
+--	id_status INT IDENTITY PRIMARY KEY
+--	, status_boat nchar(15) UNIQUE not null
+--)
+
+--CREATE TABLE [executor].[boat]
+--(
+--	id_boat INT IDENTITY PRIMARY KEY
+--	, nameboat nvarchar(35) not null
+--	, number nvarchar(35) not null
+--	, id_type int not null foreign key (id_type) references [sailing].[type_boat](id_type)
+--	, id_status int not null foreign key (id_status) references [additions].[type_status_boat] (id_status)
+--	, notes nvarchar (100) null DEFAULT 'Empty'
+--)
+
+--CREATE TABLE [executor].[type_service]
+--(
+--	id_service INT IDENTITY PRIMARY KEY
+--	, nameservice nvarchar(30) UNIQUE not null
+--	, price int not null
+--	, notes nvarchar (100) null
+--)
+
+
+--CREATE TABLE [sailing].[booking]
+--(
+--	id_booking INT IDENTITY PRIMARY KEY
+--	, id_service int FOREIGN KEY (id_service) REFERENCES [executor].[type_service](id_service)
+--	, id_emp int FOREIGN KEY (id_emp) REFERENCES [executor].[Employer]([id_emp])
+--	, id_client int FOREIGN KEY (id_client) REFERENCES [client].[client](id_client)
+--	, dateexit datetime not null
+--	, dateBooking datetime DEFAULT GETDATE()
+	
+--)
+
+
+--CREATE TABLE [additions].[type_pay]
+--(
+--	id_type_payment INT IDENTITY PRIMARY KEY
+--	, typepayment nvarchar(30) UNIQUE not null
+--)
+
+--CREATE TABLE [sailing].[pay_booking]
+--(
+--	id_booking INT IDENTITY PRIMARY KEY
+--	, id_type_payment int FOREIGN KEY (id_type_payment) REFERENCES [additions].[type_pay](id_type_payment)
+--	, price money not null
+--	, FOREIGN KEY (id_booking) REFERENCES [sailing].[booking](id_booking)
+--)
+
+--create table [additions].[forcmajor]
+--(
+--	id_forcmajor int IDENTITY primary key
+--	, nameforcmajor nvarchar UNIQUE not null
+--)
+
+--CREATE TABLE [sailing].[event_sailing]
+--(
+--	id_sailing INT IDENTITY PRIMARY KEY
+--	, id_booking int UNIQUE FOREIGN KEY (id_booking) REFERENCES [sailing].[booking](id_booking)
+--	, id_skipper int FOREIGN KEY (id_skipper) REFERENCES [executor].[skipper](id_skipper)
+--	, id_boat int FOREIGN KEY (id_boat) REFERENCES [executor].[boat](id_boat)
+--	, id_forcmajor int foreign key (id_forcmajor) REFERENCES [additions].[forcmajor](id_forcmajor)
+--	, status nchar(2) UNIQUE not null
+--	, currentdate date DEFAULT GetDAte() 
+--	, currenttime date DEFAULT GetDAte() 
+--)
+
+
+
+ --Создаем view
+
+ --1 Данные шкиперов с телефонами
+
+--create VIEW [getterdata].list_skipper
+----WITH SCHEMABINDING
+--AS 
+--select es.fName, es.lName, asm.phone
+--from [executor].[skipper] AS ES
+--left join [additions].[skipper_mobiles] as ASM
+--ON ES.id_skipper = ASM.id_skipper
+
+-- 2 Список лодок по типам
+--create VIEW [getterdata].list_Boats
+--WITH SCHEMABINDING
+--AS 
+--select EB.nameboat, eb.number, scb.type_boat, ATSB.status_boat
+--from [executor].[boat] as EB
+--left join [sailing].[type_boat] as SCB
+--ON eb.id_type = scb.id_type
+--left join [additions].[type_status_boat] as ATSB
+--ON eb.id_status = atsb.id_status
+-- go
+
+-- Реализуйте 1 хранимую процедуру с входными параметрами
+
+--create procedure [getterdata].name_number_clients
+-- @num1 AS int, @num2 as int
+--AS
+--select cpp.fName, acm.id_client
+--from [client].[client] as CC
+--left join [client].[private_person] as CPP
+--ON cc.id_client = cpp.id_client
+--left join [additions].[client_mobile] as ACM
+--on cc.id_client = acm.id_client
+--where cc.id_client BETWEEN @num1 AND @num2
+--go
+
