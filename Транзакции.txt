@@ -1,0 +1,185 @@
+--2.	Выполните запрос для проверки наличия в таблице данных записей. Приведите скрипт.
+
+select *
+from dbo.Goods
+
+--3.	Используя явную транзакцию выполните изменение цены продуктов в соответствии
+--со следующей таблицей и приведите скрипт:
+--ProductId	Новая цена (Price)
+--1	Увеличение на 30%
+--2	Увеличение на 13%
+
+BEGIN TRANSACTION
+
+	update dbo.Goods
+	SET Price = Price + Price*0.3
+	where ProductId = 1
+
+	update dbo.Goods
+	SET Price = Price + Price*0.13
+	where ProductId = 2
+	
+COMMIT
+
+--4.	Выполните запрос для проверки наличия в таблице данных записей. Приведите скрипт.
+select *
+from dbo.Goods
+
+--5.	Используя явную транзакцию выполните изменение цены продуктов в соответствии
+--со следующей таблицей и приведите скрипт:
+--ProductId	Новая цена (Price)
+--2	Увеличение на 30%
+--3	'250 рублей'
+
+set XACT_ABORT on
+BEGIN TRANSACTION
+	update dbo.Goods
+	SET Price = Price + Price*0.3
+	where ProductId = 2
+
+	update dbo.Goods
+	SET Price = '250 рублей'
+	where ProductId = 3
+commit
+
+
+	
+--Задание 3. Уровни изоляции транзакций
+--Задача 1.
+
+--1.	Откройте две параллельные сессии.
+
+--2.	В первой сессии: 
+--a.	откройте явную транзакцию 
+BEGIN TRANSACTION
+--b.	добавьте в рамках транзакции новый товар в таблицу dbo.Goods.
+
+INSERT INTO dbo.Goods(ProductName, Price)
+      VALUES (N'Конфеты', 150)
+--Транзакцию не закрывайте
+--3.	Во второй сессии: 
+--a.	установите уровень изоляции READ UNCOMMITTED
+SET TRANSACTION ISOLATION LEVEL
+READ UNCOMMITTED
+--b.	Напишите запрос, извлекающий все записи из таблицы dbo.Goods. 
+select * from [dbo].[Goods]
+
+--Каков результат?
+-- Выведена таблица с добавленным товаром в другой сессии с не завершенной транзацкцией
+
+--4.	В первой сессии: 
+--a.	Отмените выполнение транзакции
+rollback
+--5.	Во второй сессии: 
+--a.	Напишите запрос, извлекающий все записи из таблицы dbo.Goods. 
+select * from [dbo].[Goods]
+--Каков результат?
+-- В таблице нет добавленного товара 
+--6.	Закройте сессии
+
+
+--Задача 2.
+--1.	Откройте две параллельные сессии.
+--2.	В первой сессии: 
+--a.	откройте явную транзакцию 
+BEGIN TRANSACTION
+--b.	добавьте в рамках транзакции новый товар в таблицу dbo.Goods.
+INSERT INTO dbo.Goods(ProductName, Price)
+      VALUES (N'Конфеты', 150)
+--Транзакцию не закрывайте
+
+--3.	Во второй сессии: 
+--a.	установите уровень изоляции READ COMMITTED
+SET TRANSACTION ISOLATION LEVEL
+READ COMMITTED
+--b.	Напишите запрос, извлекающий все записи из таблицы dbo.Goods. 
+select * from [dbo].[Goods]
+--Каков результат?
+--Сессия ждет доступ к таблице
+
+--4.	В первой сессии: 
+--a.	Отмените выполнение транзакции
+rollback
+--5.	Во второй сессии: 
+--a.	Напишите запрос, извлекающий все записи из таблицы dbo.Goods. 
+select * from [dbo].[Goods]
+--Каков результат?
+-- В таблице нет добавленного товара 
+--6.	Закройте сессии
+
+--Задача 3.
+--1.	Откройте две параллельные сессии.
+--2.	В первой сессии: 
+--a.	откройте явную транзакцию 
+BEGIN TRANSACTION
+--b.	напишите запрос, извлекающий все записи из таблицы dbo.Goods.
+select * from [dbo].[Goods]
+--Транзакцию не закрывайте
+
+
+--3.	Во второй сессии: 
+--a.	откройте явную транзакцию 
+BEGIN TRANSACTION
+--b.	добавьте в рамках транзакции новый товар в таблицу dbo.Goods. 
+INSERT INTO dbo.Goods(ProductName, Price)
+      VALUES (N'Конфеты', 150)
+	  commit
+--c.	Зафиксируйте транзакцию.
+
+
+
+--4.	В первой сессии: 
+--a.	Напишите запрос, извлекающий все записи из таблицы dbo.Goods. 
+select * from [dbo].[Goods]
+--b.	Каков результат?
+-- Таблица с добавленным новым товаром
+--c.	Закройте транзакцию
+rollback
+--5.	Закройте сессии
+
+
+--Задача 4.
+--1.	Откройте две параллельные сессии.
+
+--2.	В первой сессии: 
+--a.	установите уровень изоляции REPEATABLE READ
+SET TRANSACTION ISOLATION LEVEL
+REPEATABLE READ
+--b.	откройте явную транзакцию 
+BEGIN TRANSACTION
+--c.	напишите запрос, извлекающий из таблицы dbo.Goods все записи,
+--удовлетворяющие условию productid >2 
+select * from [dbo].[Goods] where ProductId > 2
+--d.	добавьте в рамках транзакции новый товар в таблицу dbo.Goods.
+INSERT INTO dbo.Goods(ProductName, Price)
+      VALUES (N'Прогулка на яхте', 15000)
+--Транзакцию не закрывайте!
+
+--3.	Во второй сессии: 
+--a.	откройте явную транзакцию 
+BEGIN TRANSACTION
+--b.	добавьте в рамках транзакции новый товар в таблицу dbo.Goods. 
+INSERT INTO dbo.Goods(ProductName, Price)
+      VALUES (N'мопед ', 35000)
+--c.	Каково состояние вашей транзакции.
+-- (затронута одна строка)
+
+--4.	В первой сессии: 
+--a.	напишите запрос, извлекающий из таблицы dbo.Goods все записи,
+--удовлетворяющие условию productid >2 
+select * from [dbo].[Goods] where ProductId > 2
+--b.	Каков результат?
+-- сессия ждет доступа к таблице
+
+--5.	Во второй сессии: 
+--a.	напишите запрос, извлекающий из таблицы dbo.Goods все записи,
+--удовлетворяющие условию productid <2 
+select * from [dbo].[Goods] where ProductId < 2
+--b.	Каково состояние вашей транзакции?
+-- ERROR
+-- Transaction (Process ID 53) was deadlocked on lock resources with another process and
+-- has been chosen as the deadlock victim. Rerun the transaction.
+select xact_state ()
+--Откатите открытую транзакцию и удалите таблицу из БД
+rollback
+drop table dbo.Goods

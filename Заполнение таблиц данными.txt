@@ -1,0 +1,47 @@
+--Задание 1. Модификация данных в БД
+use [DevDB2022_serlet]
+--1.	Используя оператор INSERT …VALUES вставьте в таблицы вашей БД по 2 записи
+--(с учетом ограничений целостности).
+
+insert into [executor].[skipper] ([fName], [lName], [license])
+VALUES ('Petr', 'petrov', '392817463'), ('Vasia', 'Vasilev', '9348926742'), ('Daria', 'Sidorova', '174082653')
+
+insert into [additions].[skipper_mobiles] ([id_skipper], [phone])
+VALUES (1, '+7(921)7229204'), (2, '+7(904)5112220'), (1, '+7(906)5239328')
+
+insert into [executor].[type_service]([nameservice], [price])
+VALUES ('three hours sailing', '10000')
+
+--2.	Вставьте записи используя INSERT на основе SELECT. В качестве источников данных можно воспользоваться таблицами БД TSQL.
+
+insert into [executor].[skipper] ([fName], [lName])
+SELECT he.firstname, he.lastname
+FROM TSQL.[HR].[Employees]
+
+--3.	Выполните модификацию записей в таблицах вашей БД, в соответствии с бизнес-процессами
+--выбранной предметной области. Приведите скрипт.
+update [executor].[type_service]
+set [price] = [price] + 5000
+
+--4.	Напишите скрипт, для удаления неактуальных записей из таблиц вашей БД.
+
+delete from [executor].[skipper]
+where license = 'None'
+
+--Задание 2. Транзакции
+
+--1.	Создайте в вашей БД следующую таблицу и добавьте в нее записи:
+--Создание таблицы
+   CREATE TABLE dbo.Goods (
+      ProductId INT IDENTITY(1,1) NOT NULL,
+      ProductName NVARCHAR(100) NOT NULL ,
+      Price MONEY NULL CHECK(Price > 0)
+   );
+
+--Добавление данных в таблицу
+   INSERT INTO dbo.Goods(ProductName, Price)
+      VALUES (N'Велосипед', 7550),
+             (N'Перчатки', 230),
+             (N'Насос', 150);
+
+
