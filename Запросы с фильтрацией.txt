@@ -1,0 +1,158 @@
+--Задание 1. Написание запросов с фильтрацией
+
+--1.	Выведите заказчиков с кодом (id) 30
+
+SELECT *
+FROM [Sales].[Customers]
+WHERE custid = 30
+
+--2.	Выведитевсе заказы, сделанные (оформленные) после 10 апреля 2008 года 
+--
+SELECT *
+FROM [Sales].[Orders]
+WHERE orderdate > DATEFROMPARTS(2008,04,10)
+order BY orderdate
+
+--3.	Выведите название и стоимость продуктов, при условии, что стоимость находится в диапазоне от 100 до 250.
+--
+SELECT *
+FROM [Production].[Products]
+WHERE unitprice BETWEEN 100 AND 250
+
+--4.	Выведите всех заказчиков, проживающих в Париже, Берлине или Мадриде.
+--
+SELECT *
+FROM [Sales].[Customers]
+WHERE city  IN ('Paris', 'Berlin',  'Madrid')
+
+--5.	Выведите всех сотрудников, для которых не определен регион проживания
+--
+SELECT *
+FROM [HR].[Employees]
+WHERE region IS NULL
+
+--6.	Выведите заказчиков с именами кроме “Linda”, “Robert”, “Ann”
+--
+SELECT *
+FROM [Sales].[Customers]
+WHERE  contactname  NOT LIKE '%, Linda' AND contactname NOT LIKE '%, Robert' AND contactname NOT LIKE '%, Ann'
+
+--7.	Выведите заказчиков с фамилией на букву “S”  или “N”.
+--
+SELECT *
+FROM [Sales].[Customers]
+WHERE contactname LIKE '[SN]%, %'
+
+--8. 	Выведите информацию о заказчиках, сформировав два вычисляемых столбца:
+--Фамилия и Имя заказчика. В результирующую выборку должны попасть только те заказчики, чье имя начинается на буквы "K" или "M",
+--а фамилия начинается на  “S”  или “K”.
+
+SELECT 
+		SUBSTRING(contactname, 0, CHARINDEX(',',contactname))  AS LastName -- 
+		, SUBSTRING(contactname, CHARINDEX(',',contactname)+1, LEN(contactname)) AS FirstName 
+FROM [Sales].[Customers] 
+WHERE contactname LIKE '[SK]%, [KM]%'
+
+--Задание 2. Написание запросов к нескольким таблицам
+--1.	Сформируйте выборку следующего вида:    ФИО сотрудника, Номер Заказа, Дата Заказа.
+--Отсортируйте выборку по дате (от самых ранних к самым поздним заказам)
+SELECT HE.titleofcourtesy, HE.lastname, HE.firstname, SO.orderid
+FROM [HR].[Employees] AS HE
+JOIN
+[Sales].[Orders] AS SO
+ON HE.empid = SO.empid
+ORDER BY SO.orderdate
+
+--2.	Напишите запрос, который выбирает информацию о заказах и их деталях:
+--[orderid]+, [custid]+,[empid]+,[orderdate]+ ,[productid]+,[unitprice]+,[qty]+,[discount]+.
+--Сформируйте в этом запросе вычисляемый столбец (LineTotal), который рассчитывает стоимость каждой позиции в заказе с учетом скидки
+SELECT  SO.orderid
+		, SO.custid
+		, SO.empid
+		, SO.orderdate
+		, SD.productid
+		, SD.unitprice
+		, SD.qty
+		, SD.discount
+		, (SD.unitprice * SD.qty * (1 -  SD.discount)) AS LineTotal
+FROM [Sales].[Orders] AS SO
+		JOIN
+[Sales].[OrderDetails] AS SD
+ON SO.orderid = SD.orderid
+
+
+--3.	Напишите запрос, возвращающий выборку следующего вида:
+--Номер заказа, Название заказчика, Фамилия сотрудника, Дата заказа, Название транспортной компании.
+--В запрос должны войти только те записи, которые соответствуют условию:  Заказчики и Сотрудники проживают в одном городе
+SELECT  SO.orderid
+		, SC.companyname
+		, HE.lastname
+		, SO.orderdate
+		, SO.shipname
+FROM [Sales].[Customers] AS SC
+JOIN [Sales].[Orders] AS SO
+ON SC.custid = SO.custid
+JOIN [HR].[Employees] AS HE
+ON SO.empid = HE.empid
+ WHERE SC.city = HE.city
+
+ --Задание 3. Использование операторов наборов записей
+--1.	Напишите запрос, возвращающий набор уникальных записей из таблиц Employees и Customers. Результирующая таблица должна содержать 3 столбца:
+--country, region, city.  
+SELECT [country], [region],[city] FROM [HR].[Employees]
+UNION
+SELECT [country], [region],[city]  FROM [Sales].[Customers];
+
+--2.	Напишите запрос, возвращающий набор уникальных записей из таблиц Employees (адреса сотрудников - country, region, city),
+--исключив из этого списка записи из таблицы Customers (адреса Клиентов - country, region, city). Результирующая таблица должна содержать 3 столбца:
+--country, region, city. 
+SELECT [country], [region],[city] FROM [HR].[Employees]
+EXCEPT
+SELECT [country], [region],[city]  FROM [Sales].[Customers];
+
+--Задание 4. Запросы с группировкой
+--1.	Выведите таблицу из трех столбцов: максимальная, минимальная и средняя стоимость продуктов.
+SELECT MAX(PP.unitprice) AS MaxPrice
+		, Min(PP.unitprice) AS MinPrice
+		, AVG(PP.unitprice) AS Middleprice
+FROM [Production].[Products] AS PP
+ 
+--2.	Выведите номер категории и количество продуктов в каждой категории.
+--
+SELECT PP.categoryid, COUNT( PP.categoryid) AS CountProd
+FROM [Production].[Products] AS PP
+GROUP BY PP.categoryid
+
+--3.	Выведите данные о количестве заказов, оформленных каждым сотрудником
+--
+SELECT SO.empid, COUNT(SO.orderid) AS OrdersCount
+FROM [Sales].[Orders] AS SO
+GROUP BY SO.empid
+
+--4.	Выберите 5 самых выгодных заказчиков (с точки зрения суммарной стоимости их заказов) 
+SELECT TOP 5
+		SO.custid, SUM(SD.unitprice* qty * (1- discount)) AS OrdersCount
+FROM [Sales].[Orders] AS SO
+LEFT JOIN [Sales].[OrderDetails] AS SD
+ON SO.orderid = SD.orderid
+GROUP BY SO.custid
+ORDER BY SUM(SD.unitprice * qty * (1- discount)) DESC
+
+-- сортирую по убыванию, чтобы получить 5 самых выгодных заказчиков
+
+--5.	Выведите год, количество сделанных заказов в этом году и количество уникальных заказчиков,
+--которые делали эти заказы.
+SELECT YEAR(SO.orderdate) AS orderdate
+	, COUNT(SO.orderid) AS CountOrders
+	, COUNT(DISTINCT(SO.custid)) AS UniqueCustomer
+FROM [Sales].[Orders] AS SO
+GROUP BY YEAR(SO.orderdate)
+
+--6.	Выведите список только тех заказов, общая стоимость которых превышает 1000
+SELECT orderid, SUM(unitprice*qty) AS TOTAL
+FROM [Sales].[OrderDetails]
+GROUP BY orderid
+HAVING SUM(unitprice*qty) > 1000 
+
+
+
